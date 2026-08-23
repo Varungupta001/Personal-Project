@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { sql } from "@/lib/db";
+import { getDb } from "@/lib/db";
 
 type ReviewRow = {
   id: number;
@@ -21,6 +21,7 @@ export async function GET(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const sql = getDb();
   const { id } = await params;
   const restaurantId = Number(id);
 
@@ -28,17 +29,22 @@ export async function GET(
     return NextResponse.json({ error: "Restaurant not found" }, { status: 404 });
   }
 
-  const restaurants =
-    await sql`SELECT name, cuisine, area FROM restaurants WHERE id = ${restaurantId}`;
+  const restaurants = (await sql`SELECT name, cuisine, area FROM restaurants WHERE id = ${restaurantId}`) as Array<{
+    name: string;
+    cuisine: string;
+    area: string;
+  }>;
   if (restaurants.length === 0) {
     return NextResponse.json({ error: "Restaurant not found" }, { status: 404 });
   }
   const restaurant = restaurants[0];
 
-  const aggregates =
-    await sql`SELECT AVG(rating) AS average_rating, COUNT(*)::int AS total_reviews
+  const aggregates = (await sql`SELECT AVG(rating) AS average_rating, COUNT(*)::int AS total_reviews
               FROM reviews
-              WHERE restaurant_id = ${restaurantId}`;
+              WHERE restaurant_id = ${restaurantId}`) as Array<{
+    average_rating: number | null;
+    total_reviews: number;
+  }>;
   const totalReviews = aggregates[0].total_reviews;
 
   const reviewRows =

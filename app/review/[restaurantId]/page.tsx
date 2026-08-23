@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { sql } from "@/lib/db";
+import { getDb } from "@/lib/db";
 import ReviewForm from "./ReviewForm";
 
 export default async function ReviewPage({
@@ -10,7 +10,8 @@ export default async function ReviewPage({
   const { restaurantId } = await params;
   const id = Number(restaurantId);
 
-  const rows = await sql`SELECT name FROM restaurants WHERE id = ${id}`;
+  const sql = getDb();
+  const rows = (await sql`SELECT name FROM restaurants WHERE id = ${id}`) as Array<{ name: string }>;
   if (rows.length === 0) {
     notFound();
   }

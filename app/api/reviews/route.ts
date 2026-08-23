@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
-import { sql } from "@/lib/db";
+import { getDb } from "@/lib/db";
 
 export async function POST(request: Request) {
+  const sql = getDb();
   let body: unknown;
   try {
     body = await request.json();
@@ -44,7 +45,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const found = await sql`SELECT id FROM restaurants WHERE id = ${restaurantId}`;
+  const found = (await sql`SELECT id FROM restaurants WHERE id = ${restaurantId}`) as Array<{ id: number }>;
   if (found.length === 0) {
     return NextResponse.json(
       { error: `restaurant ${restaurantId} does not exist` },
@@ -52,10 +53,9 @@ export async function POST(request: Request) {
     );
   }
 
-  const inserted =
-    await sql`INSERT INTO reviews (restaurant_id, rating, comment)
+  const inserted = (await sql`INSERT INTO reviews (restaurant_id, rating, comment)
               VALUES (${restaurantId}, ${rating}, ${comment.trim()})
-              RETURNING id`;
+              RETURNING id`) as Array<{ id: number }>;
 
   return NextResponse.json(
     { success: true, reviewId: inserted[0].id },
